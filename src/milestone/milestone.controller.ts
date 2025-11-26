@@ -6,55 +6,68 @@ import { AccessConctrolGuard } from '../Gaurds/roles.guard';
 
 @Controller('milestone')
 export class MilestoneController {
-  constructor(private readonly milestoneService: MilestoneService) {
-    
+  constructor(private readonly milestoneService: MilestoneService) {}
+
+  // Test seeding milestones (for development/testing)
+  @Get('testseed')
+  async seedsMilestones() {
+    const milestones = await this.milestoneService.seedMilestones();
+    return { message: 'Milestones seeded successfully', data: milestones };
   }
 
-  @Get('testseed')
-  seedsMilestones() {
-    return this.milestoneService.seedMilestones();
-  }
+  // Create a milestone
   @UseGuards(AccessConctrolGuard)
   @Post()
-  create(@Body() createMilestoneDto: CreateMilestoneDto) {
-     this.milestoneService.create(createMilestoneDto);
-     return {message:'Milestone created successfully'};
+  async create(@Body() createMilestoneDto: CreateMilestoneDto) {
+    const milestone = await this.milestoneService.create(createMilestoneDto);
+    return { message: 'Milestone created successfully', data: milestone };
   }
+
+  // Update a milestone (partial update)
   @UseGuards(AccessConctrolGuard)
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateMilestoneDto: UpdateMilestoneDto) {
-    this.milestoneService.update(id, updateMilestoneDto);
-    return { message: 'Milestone updated successfully' };
+  async update(
+    @Param('id') id: string,
+    @Body() updateMilestoneDto: UpdateMilestoneDto,
+  ) {
+    const updated = await this.milestoneService.update(id, updateMilestoneDto);
+    return { message: 'Milestone updated successfully', data: updated };
   }
 
+  // Get all milestones
   @Get()
-  findAll() {
-    return this.milestoneService.findAll();
+  async findAll() {
+    const milestones = await this.milestoneService.findAll();
+    return milestones;
   }
 
+  // Get a milestone by ID
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.milestoneService.findOne(id);
+  async findOne(@Param('id') id: string) {
+    const milestone = await this.milestoneService.findOne(id);
+    return milestone;
   }
 
-  @UseGuards(AccessConctrolGuard)
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    this.milestoneService.deleteMilestone(id);
-    return { message: 'Milestone deleted successfully' };
-  }
-
+  // Soft delete a milestone
   @UseGuards(AccessConctrolGuard)
   @Delete('/soft/:id')
-  removesoft(@Param('id') id: string) {
-    this.milestoneService.deleteMilestonev2(id);
-    return { message: 'Soft milestone deleted successfully' };
+  async removeSoft(@Param('id') id: string) {
+    const result = await this.milestoneService.deleteMilestonev2(id);
+    return { message: 'Soft milestone deleted successfully', data: result };
   }
 
+  // Hard delete a milestone
+  @UseGuards(AccessConctrolGuard)
+  @Delete(':id')
+  async remove(@Param('id') id: string) {
+    const result = await this.milestoneService.deleteMilestone(id);
+    return { message: 'Milestone deleted successfully', data: result };
+  }
+
+  // Get milestones by roadmap ID
   @Get('byRoadmap/:roadmapId')
-  findMilestonesByRoadmap(@Param('roadmapId') roadmapId: string) {
-    return this.milestoneService.findMilestonesByRoadmap(roadmapId);
+  async findMilestonesByRoadmap(@Param('roadmapId') roadmapId: string) {
+    const milestones = await this.milestoneService.findMilestonesByRoadmap(roadmapId);
+    return milestones;
   }
-
-  
 }
