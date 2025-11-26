@@ -2,10 +2,8 @@
 
 
 ## Class Diagram
-<img src="images/class_diagram.png" alt="Class Diagram" width="600px">
+<img src="images/class_diagram.png" alt="Class Diagram" width="600px" height="900px">
 
-## Scenario Diagram
-<img src="images/scenario_diagram.png" alt="Scenario Diagram" width="600px">
 
 
 ## Table of Contents
