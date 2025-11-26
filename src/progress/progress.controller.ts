@@ -10,7 +10,7 @@ export class ProgressController {
   constructor(private readonly progressService: ProgressService) {}
 
   @UseGuards(AuthGuard)
-  @Post('suivreRoadmap')
+  @Post('createRoadmap')
   async create(@Body() createProgressDto: CreateProgressDto, @User() user) {
     createProgressDto.userId = user.id;
     await this.progressService.create(createProgressDto);
