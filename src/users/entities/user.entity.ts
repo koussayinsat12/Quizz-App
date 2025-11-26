@@ -30,13 +30,16 @@ export class User {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @DeleteDateColumn()
+  deletedAt: Date;
+
+  // relations
   @OneToMany(() => Progress, progress => progress.user)
   progress: Progress[]
   @OneToMany(() => Validation, validations => validations.user)
   validations: Progress[]
 
-  @DeleteDateColumn()
-  deletedAt: Date;
 }
 export default User
 
