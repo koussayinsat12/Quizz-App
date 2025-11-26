@@ -1,8 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { Repository, FindManyOptions, FindOneOptions, UpdateResult } from 'typeorm';
+import { Injectable, NotFoundException, ConflictException  } from '@nestjs/common';
+import { Repository, In, DataSource } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CrudService } from '../common/crud.service';
-
 import { Progress } from './entities/progress.entity';
 import { CreateProgressDto } from './dto/create-progress.dto';
 import { ConfirmUpdateProgressDto } from './dto/confirm-progress.dto';
@@ -16,31 +15,37 @@ export class ProgressService extends CrudService<Progress> {
   constructor(
     @InjectRepository(Progress)
     private readonly progressRepository: Repository<Progress>,
-
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-
     @InjectRepository(Roadmap)
     private readonly roadmapRepository: Repository<Roadmap>,
-
     @InjectRepository(Milestone)
     private readonly milestoneRepository: Repository<Milestone>,
-
     @InjectRepository(Validation)
     private readonly validationRepository: Repository<Validation>,
+    private readonly dataSource: DataSource,
   ) {
     super(progressRepository);
   }
 
-  // Create a new progress record
   async create(createDto: CreateProgressDto): Promise<Progress> {
-    const { roadmapId, userId, percentage } = createDto;
+    const { roadmapId, userId, percentage = 0 } = createDto;
 
-    const user = await this.userRepository.findOne({ where: { id: userId } });
-    const roadmap = await this.roadmapRepository.findOne({ where: { id: roadmapId } });
+    const [user, roadmap] = await Promise.all([
+      this.userRepository.findOne({ where: { id: userId } }),
+      this.roadmapRepository.findOne({ where: { id: roadmapId } }),
+    ]);
 
     if (!user || !roadmap) {
-      throw new NotFoundException('User or Roadmap not found.');
+      throw new NotFoundException('User or Roadmap not found');
+    }
+
+    // Check if progress already exists
+    const existing = await this.progressRepository.findOne({
+      where: { user: { id: userId }, roadmap: { id: roadmapId } },
+    });
+    if (existing) {
+      throw new ConflictException('Progress already exists for this user and roadmap');
     }
 
     const newProgress = this.progressRepository.create({
@@ -52,51 +57,60 @@ export class ProgressService extends CrudService<Progress> {
     return await this.progressRepository.save(newProgress);
   }
 
-  // Update progress percentage based on validations for a user's roadmap
-  async updateProgressByUserAndRoadmap(confirmUpdateProgressDto: ConfirmUpdateProgressDto): Promise<UpdateResult> {
+  async updateProgressByUserAndRoadmap(
+    confirmUpdateProgressDto: ConfirmUpdateProgressDto,
+  ): Promise<void> {
     const { userId, roadmapId } = confirmUpdateProgressDto;
 
-    const existingProgress = await this.progressRepository.findOne({
-      where: { user: { id: userId }, roadmap: { id: roadmapId } },
-    });
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    if (!existingProgress) {
-      throw new NotFoundException('Progress for User and Roadmap not found.');
+    try {
+      const existingProgress = await queryRunner.manager.findOne(Progress, {
+        where: { user: { id: userId }, roadmap: { id: roadmapId } },
+      });
+      if (!existingProgress) {
+        throw new NotFoundException('Progress not found');
+      }
+
+      const milestones = await queryRunner.manager.find(Milestone, {
+        where: { roadmap: { id: roadmapId } },
+      });
+      if (!milestones.length) {
+        throw new NotFoundException('No milestones found for this roadmap');
+      }
+
+      const validations = await queryRunner.manager.find(Validation, {
+        where: {
+          user: { id: userId },
+          milestone: { id: In(milestones.map(m => m.id)) },
+          passed: true,
+        },
+      });
+
+      const ratio = (validations.length / milestones.length) * 100;
+      existingProgress.percentage = Number(ratio.toFixed(1));
+
+      await queryRunner.manager.save(existingProgress);
+      await queryRunner.commitTransaction();
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
     }
-
-    const milestones = await this.milestoneRepository.find({
-      where: { roadmap: { id: roadmapId } },
-    });
-
-    if (!milestones || milestones.length === 0) {
-      throw new NotFoundException(`No milestones found for Roadmap ID ${roadmapId}.`);
-    }
-
-    // Count validations that passed
-    const validations = await this.validationRepository.find({
-      where: { user: { id: userId }, milestone: { id: In(milestones.map(m => m.id)) } },
-    });
-
-    const validatedCount = validations.filter(v => v.passed).length;
-    const ratio = (validatedCount / milestones.length) * 100;
-
-    existingProgress.percentage = Number(ratio.toFixed(1));
-
-    return await this.progressRepository.update(existingProgress.id, {
-      percentage: existingProgress.percentage,
-    });
   }
 
-  // Get progress percentage for a user and roadmap
   async getProgressByUserAndRoadmap(userId: number, roadmapId: string): Promise<number> {
-    const existingProgress = await this.progressRepository.findOne({
+    const progress = await this.progressRepository.findOne({
       where: { user: { id: userId }, roadmap: { id: roadmapId } },
     });
 
-    if (!existingProgress) {
-      throw new NotFoundException(`Progress for User ID ${userId} and Roadmap ID ${roadmapId} not found.`);
+    if (!progress) {
+      throw new NotFoundException('Progress not found');
     }
 
-    return existingProgress.percentage;
+    return progress.percentage;
   }
 }

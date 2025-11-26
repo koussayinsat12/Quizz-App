@@ -2,59 +2,80 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@n
 import { TestQuizService } from './test-quiz.service';
 import { CreateTestQuizDto } from './dto/create-test-quiz.dto';
 import { UpdateTestQuizDto } from './dto/update-test-quiz.dto';
-import { TestQuiz } from './entities/test-quiz.entity';
-import { AccessConctrolGuard } from '../Gaurds/roles.guard';
+import { AccessControlGuard } from '../Guards/roles.guard';
 
 @Controller('quiz')
 export class TestQuizController {
   constructor(private readonly testQuizService: TestQuizService) {}
 
+  /**
+   * Seed test quizzes from JSON file
+   */
   @Get('testseed')
-  seedTestQuizzes() {
-    this.testQuizService.seedTestQuizzes();
+  async seedTestQuizzes() {
+    await this.testQuizService.seedTestQuizzes();
     return { message: 'Test quizzes seeded successfully' };
   }
 
-  @UseGuards(AccessConctrolGuard)
+  /**
+   * Create a single test quiz (admin only)
+   */
+  @UseGuards(AccessControlGuard)
   @Post()
-  createQuiz(@Body() createTestQuizDto: CreateTestQuizDto) {
-    this.testQuizService.createQuiz(createTestQuizDto);
-    return { message : 'Test quiz created successfully'};
+  async createQuiz(@Body() createTestQuizDto: CreateTestQuizDto) {
+    await this.testQuizService.create(createTestQuizDto);
+    return { message: 'Test quiz created successfully' };
   }
-  @UseGuards(AccessConctrolGuard)
+
+  /**
+   * Create domain-specific quizzes (admin only)
+   */
+  @UseGuards(AccessControlGuard)
   @Post('/createquizzes')
-  createDomainQuizzes() {
-    this.testQuizService.createDomainQuizzes();
+  async createDomainQuizzes() {
+    await this.testQuizService.createDomainQuizzes();
     return { message: 'Domain quizzes created successfully' };
   }
-  
+
+  /**
+   * Get all test quizzes
+   */
   @Get()
-  findAll() {
-    return this.testQuizService.findAll();
+  async findAll() {
+    return await this.testQuizService.findAll();
   }
 
+  /**
+   * Get a test quiz by ID
+   */
   @Get(':id')
-  findOne(@Param('id') id: number) {
-    return this.testQuizService.findOne(id);
+  async findOne(@Param('id') id: number) {
+    return await this.testQuizService.findOne(id);
   }
 
+  /**
+   * Get a test quiz by title
+   */
   @Get('/title/:title')
-  findByTitle(@Param('title') title: string) {
-    return this.testQuizService.findByTitle(title);
+  async findByTitle(@Param('title') title: string) {
+    return await this.testQuizService.findByTitle(title);
   }
 
-  @UseGuards(AccessConctrolGuard)
+  /**
+   * Update a test quiz by ID (admin only)
+   */
+  @UseGuards(AccessControlGuard)
   @Patch(':id')
-  update(@Param('id') id: number, @Body() updateTestQuizDto: UpdateTestQuizDto) {
-    this.testQuizService.update(id, updateTestQuizDto);
+  async update(@Param('id') id: number, @Body() updateTestQuizDto: UpdateTestQuizDto) {
+    await this.testQuizService.update(id, updateTestQuizDto);
     return { message: 'Test quiz updated successfully' };
   }
 
-  @UseGuards(AccessConctrolGuard)
+
+  @UseGuards(AccessControlGuard)
   @Delete(':id')
-  remove(@Param('id') id: number) {
-    this.testQuizService.DeleteQuiz(id);
+  async remove(@Param('id') id: number) {
+    await this.testQuizService.remove(id);
     return { message: 'Test quiz deleted successfully' };
   }
-  
 }

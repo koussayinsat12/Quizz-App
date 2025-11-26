@@ -1,54 +1,35 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { DeleteResult, Repository } from 'typeorm';
-import { User } from './entities/user.entity';
+import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Roadmap } from '../roadmaps/entities/roadmap.entity';
-import { Milestone } from '../milestone/entities/milestone.entity';
-import { CrudService } from '../common/crud.service';
-import { Progress } from '../progress/entities/progress.entity';
 import * as bcrypt from 'bcrypt';
+
+import { User } from './entities/user.entity';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { Progress } from '../progress/entities/progress.entity';
+import { CrudService } from '../common/crud.service';
 
 @Injectable()
 export class UsersService extends CrudService<User> {
   constructor(
     @InjectRepository(User)
-    private userRepository: Repository<User>,
+    private readonly userRepository: Repository<User>,
     @InjectRepository(Progress)
-    private progressRepository: Repository<Progress>,
+    private readonly progressRepository: Repository<Progress>,
   ) {
     super(userRepository);
   }
 
+  /**
+   * Get all users
+   */
   async findAll(): Promise<User[]> {
     return await this.userRepository.find();
   }
 
-  async deleteUser(id: string): Promise<string> {
-    try {
-      await super.remove(id);
-      return `User with ID "${id}" has been successfully deleted`;
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        return `User with ID "${id}" not found`;
-      }
-      throw error;
-    }
-  }
 
-  async deleteUserv2(id: string): Promise<string> {
-    try {
-      await super.removewithsoft(id);
-      return `User with ID "${id}" has been successfully deleted`;
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        return `User with ID "${id}" not found`;
-      }
-      throw error;
-    }
-  }
-
+  /**
+   * Get a user by ID
+   */
   async getUserById(id: number): Promise<User> {
     const user = await super.findOne(id);
     if (!user) {
@@ -57,6 +38,9 @@ export class UsersService extends CrudService<User> {
     return user;
   }
 
+  /**
+   * Get the total score of a user across all their progresses
+   */
   async getTotalScore(userId: number): Promise<number> {
     const userProgresses = await this.progressRepository.find({
       where: { user: { id: userId } },
@@ -65,6 +49,9 @@ export class UsersService extends CrudService<User> {
     return userProgresses.reduce((total, progress) => total + progress.percentage, 0);
   }
 
+  /**
+   * Update a user's details
+   */
   async updateUser(id: number, updateUserDto: UpdateUserDto): Promise<User> {
     const existingUser = await this.getUserById(id);
 
@@ -83,6 +70,9 @@ export class UsersService extends CrudService<User> {
     return await this.userRepository.save(existingUser);
   }
 
+  /**
+   * Hash a password using bcrypt
+   */
   private async hashPassword(password: string): Promise<string> {
     const saltRounds = 10;
     return bcrypt.hash(password, saltRounds);

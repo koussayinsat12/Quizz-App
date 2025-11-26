@@ -38,8 +38,5 @@ export class User {
   @OneToMany(() => Progress, progress => progress.user)
   progress: Progress[]
   @OneToMany(() => Validation, validations => validations.user)
-  validations: Progress[]
-
+  validations: Validation[];
 }
-export default User
-

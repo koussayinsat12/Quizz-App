@@ -25,4 +25,3 @@ export class Validation {
   @DeleteDateColumn()
   deletedAt: Date;
 }
-

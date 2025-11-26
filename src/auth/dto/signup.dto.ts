@@ -1,19 +1,26 @@
-import { IsEmail, IsNotEmpty, IsString, Matches, MinLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsString, IsEnum, Matches, MinLength } from 'class-validator';
 import ErrorMessages from '../../utils/error.messages';
 import { UserRoleEnum } from '../../enums/user-role.enum';
 
 export class SignUpDto {
-  @IsNotEmpty({message:ErrorMessages.usernameRequired})
-  @MinLength(4,{message:ErrorMessages.invalidLengthUsername})
+  @IsNotEmpty({ message: ErrorMessages.usernameRequired })
+  @IsString()
+  @MinLength(4, { message: ErrorMessages.invalidLengthUsername })
   username: string;
-  @IsNotEmpty({message:ErrorMessages.emailRequired})
-  @IsEmail({}, { message:ErrorMessages.invalidEmail})
+
+  @IsNotEmpty({ message: ErrorMessages.emailRequired })
+  @IsEmail({}, { message: ErrorMessages.invalidEmail })
   email: string;
+
   @IsNotEmpty({ message: ErrorMessages.passwordRequired })
-  @MinLength(6, { message:ErrorMessages.invalidLengthPassword})
+  @IsString()
+  @MinLength(6, { message: ErrorMessages.invalidLengthPassword })
   @Matches(/^(?=.*\d)(?=.*[!@#$%^&*])(?=.*[a-zA-Z]).{6,}$/, {
-    message:ErrorMessages.invalidPassword,
+    message: ErrorMessages.invalidPassword,
   })
   password: string;
-  role?:UserRoleEnum;
+  
+  @IsOptional()
+  @IsEnum(UserRoleEnum)
+  role?: UserRoleEnum;
 }

@@ -1,4 +1,4 @@
-import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
+import {Module} from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
@@ -6,8 +6,6 @@ import { RoadmapsModule } from './roadmaps/roadmaps.module';
 import { ProgressModule } from './progress/progress.module';
 import { MilestoneModule } from './milestone/milestone.module';
 import { ValidationsModule } from './validations/validations.module';
-import { RecommandedCertificationsModule } from './recommanded-certifications/recommanded-certifications.module';
-import { RecommandedCoursesModule } from './recommanded-courses/recommanded-courses.module';
 import { TestQuizModule } from './test-quiz/test-quiz.module';
 import { QuestionsModule } from './questions/questions.module';
 import { CommonModule } from './common/common.module';
@@ -20,7 +18,7 @@ import { AuthModule } from './auth/auth.module';
 const Joi = require('joi');
 
 @Module({
-  imports: [UsersModule, RoadmapsModule, ProgressModule, MilestoneModule, ValidationsModule, RecommandedCertificationsModule, RecommandedCoursesModule, TestQuizModule, QuestionsModule
+  imports: [UsersModule, RoadmapsModule, ProgressModule, MilestoneModule, ValidationsModule, TestQuizModule, QuestionsModule
   ,ConfigModule.forRoot({
 validationSchema:Joi.object({
   DB_HOST:Joi.string().required(),

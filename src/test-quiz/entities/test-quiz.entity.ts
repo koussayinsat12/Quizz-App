@@ -17,3 +17,4 @@ export class TestQuiz {
   @OneToMany(() => Question, question => question.testQuiz , { cascade: true } )
   questions: Question[];
 }
+export default TestQuiz;

@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@n
 import { MilestoneService } from './milestone.service';
 import { CreateMilestoneDto } from './dto/create-milestone.dto';
 import { UpdateMilestoneDto } from './dto/update-milestone.dto';
-import { AccessConctrolGuard } from '../Gaurds/roles.guard';
+import { AccessControlGuard } from '../Guards/roles.guard';
 
 @Controller('milestone')
 export class MilestoneController {
@@ -16,7 +16,7 @@ export class MilestoneController {
   }
 
   // Create a milestone
-  @UseGuards(AccessConctrolGuard)
+  @UseGuards(AccessControlGuard)
   @Post()
   async create(@Body() createMilestoneDto: CreateMilestoneDto) {
     const milestone = await this.milestoneService.create(createMilestoneDto);
@@ -24,7 +24,7 @@ export class MilestoneController {
   }
 
   // Update a milestone (partial update)
-  @UseGuards(AccessConctrolGuard)
+  @UseGuards(AccessControlGuard)
   @Patch(':id')
   async update(
     @Param('id') id: string,
@@ -49,18 +49,18 @@ export class MilestoneController {
   }
 
   // Soft delete a milestone
-  @UseGuards(AccessConctrolGuard)
+  @UseGuards(AccessControlGuard)
   @Delete('/soft/:id')
   async removeSoft(@Param('id') id: string) {
-    const result = await this.milestoneService.deleteMilestonev2(id);
+    const result = await this.milestoneService.removewithsoft(id);
     return { message: 'Soft milestone deleted successfully', data: result };
   }
 
   // Hard delete a milestone
-  @UseGuards(AccessConctrolGuard)
+  @UseGuards(AccessControlGuard)
   @Delete(':id')
   async remove(@Param('id') id: string) {
-    const result = await this.milestoneService.deleteMilestone(id);
+    const result = await this.milestoneService.remove(id);
     return { message: 'Milestone deleted successfully', data: result };
   }
 

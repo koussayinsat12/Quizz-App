@@ -1,50 +1,67 @@
-import {Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, ParseIntPipe, Res, UseGuards, Req} from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { AuthGuard } from '../Gaurds/jwt-auth.guard';
+import { AuthGuard } from '../Guards/jwt-auth.guard';
 import { User } from '../decorators/user.decorator';
-import { AccessConctrolGuard } from '../Gaurds/roles.guard';
+import { AccessControlGuard } from '../Guards/roles.guard';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @UseGuards(AccessConctrolGuard)
+  /**
+   * Hard delete a user by ID
+   */
+  @UseGuards(AccessControlGuard)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    this.usersService.deleteUser(id);
-    return { message: 'User deleted successfully' };
+  async remove(@Param('id') id: string) {
+    const message = await this.usersService.remove(id);
+    return { message };
   }
-  @UseGuards(AccessConctrolGuard)
+
+  /**
+   * Soft delete a user by ID
+   */
+  @UseGuards(AccessControlGuard)
   @Delete('/soft/:id')
-  removesoft(@Param('id') id: string) {
-    this.usersService.deleteUserv2(id);
-    return { message: 'Soft user deleted successfully' };
+  async removesoft(@Param('id') id: string) {
+    const message = await this.usersService.removewithsoft(id);
+    return { message };
   }
 
+  /**
+   * Get all users
+   */
   @Get()
-  findAll() {
-    return this.usersService.findAll();
+  async findAll() {
+    return await this.usersService.findAll();
   }
 
+  /**
+   * Get the currently logged-in user
+   */
   @UseGuards(AuthGuard)
   @Get('getuser')
-   getUserById(@User() user) {
-    return this.usersService.getUserById(user.id);
+  async getUserById(@User() user) {
+    return await this.usersService.getUserById(user.id);
   }
 
+  /**
+   * Get total score of a user
+   */
   @Get(':id/totalscore')
-  getTotalScore(@Param('id', ParseIntPipe) id: number) {
-    return  this.usersService.getTotalScore(id);
-    
+  async getTotalScore(@Param('id', ParseIntPipe) id: number) {
+    return await this.usersService.getTotalScore(id);
   }
 
+  /**
+   * Update the currently logged-in user
+   */
   @UseGuards(AuthGuard)
   @Post('reset')
-  update(@Body() updateUserDto: UpdateUserDto, @User() user) {
-    this.usersService.updateUser(user.id, updateUserDto);
+  async update(@Body() updateUserDto: UpdateUserDto, @User() user) {
+    await this.usersService.updateUser(user.id, updateUserDto);
     return { message: 'User updated successfully' };
   }
-
-} 
+}

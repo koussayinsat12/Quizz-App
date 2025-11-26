@@ -65,7 +65,7 @@ export class QuestionsService extends CrudService<Question> {
   /**
    * Get all questions for a specific quiz
    */
-  async getQuestionsByQuiz1(id: number): Promise<Question[]> {
+  async getQuestionsByQuiz(id: number): Promise<Question[]> {
     return await this.questionsRepository.find({ where: { testQuiz: { id } } });
   }
 
@@ -101,13 +101,6 @@ export class QuestionsService extends CrudService<Question> {
   }
 
   /**
-   * Get all questions
-   */
-  async findAll(): Promise<Question[]> {
-    return await super.findAll();
-  }
-
-  /**
    * Update a question
    */
   async updateQuestion(id: number, updateDto: UpdateQuestionDto): Promise<Question> {
@@ -128,36 +121,6 @@ export class QuestionsService extends CrudService<Question> {
     }
 
     return await super.update(id, updateDto);
-  }
-
-  /**
-   * Hard delete a question
-   */
-  async deleteQuestion(id: number): Promise<string> {
-    try {
-      await super.remove(id);
-      return `Question with ID "${id}" has been successfully deleted`;
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        return `Question with ID "${id}" not found`;
-      }
-      throw error;
-    }
-  }
-
-  /**
-   * Soft delete a question
-   */
-  async deleteQuestionv2(id: number): Promise<string> {
-    try {
-      await super.removewithsoft(id);
-      return `Question with ID "${id}" has been successfully soft deleted`;
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        return `Question with ID "${id}" not found`;
-      }
-      throw error;
-    }
   }
 
   /**
@@ -197,7 +160,7 @@ export class QuestionsService extends CrudService<Question> {
     await this.validationService.calculateAndUpdateScore(confirmValidationDto);
 
     // Update Progress
-    const milestone = await this.milestoneRepository.findOne({ where: { id: quiz.title }, relations: ['roadmap'] });
+    const milestone = await this.milestoneRepository.findOne({ where: { quiz: { id: quiz.id } }, relations: ['roadmap'] });
     if (milestone) {
       const confirmProgressDto = new ConfirmUpdateProgressDto();
       confirmProgressDto.userId = quizAnswersDto.userId;

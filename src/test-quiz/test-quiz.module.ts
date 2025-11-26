@@ -5,11 +5,10 @@ import { TestQuizController } from './test-quiz.controller';
 import { TestQuiz } from './entities/test-quiz.entity';
 import { Question } from '../questions/entities/question.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { JwtService } from '@nestjs/jwt';
 
 @Module({
   imports: [TypeOrmModule.forFeature([TestQuiz,Question])],
   controllers: [TestQuizController],
-  providers: [TestQuizService,JwtService],
+  providers: [TestQuizService],
 })
 export class TestQuizModule {}

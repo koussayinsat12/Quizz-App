@@ -3,8 +3,8 @@ import { QuestionsService } from './questions.service';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
 import { QuizAnswersDto } from './dto/quiz-answers.dto';
-import { AccessConctrolGuard } from '../Gaurds/roles.guard';
-import { AuthGuard } from '../Gaurds/jwt-auth.guard';
+import { AccessControlGuard } from '../Guards/roles.guard';
+import { AuthGuard } from '../Guards/jwt-auth.guard';
 import { User } from '../decorators/user.decorator';
 
 @Controller('questions')
@@ -21,7 +21,7 @@ export class QuestionsController {
   // Get questions by quiz ID
   @Get('by-quiz/:quizID')
   async getByQuiz(@Param('quizID') quizID: number) {
-    const questions = await this.questionsService.getQuestionsByQuiz1(quizID);
+    const questions = await this.questionsService.getQuestionsByQuiz(quizID);
     return questions;
   }
 
@@ -32,7 +32,7 @@ export class QuestionsController {
   }
 
   // Create a new question (admin only)
-  @UseGuards(AccessConctrolGuard)
+  @UseGuards(AccessControlGuard)
   @Post()
   async create(@Body() createQuestionDto: CreateQuestionDto) {
     await this.questionsService.create(createQuestionDto);
@@ -52,7 +52,7 @@ export class QuestionsController {
   }
 
   // Update a question (admin only)
-  @UseGuards(AccessConctrolGuard)
+  @UseGuards(AccessControlGuard)
   @Patch(':id')
   async updateQuestion(@Param('id') questionID: number, @Body() updateQuestionDto: UpdateQuestionDto) {
     await this.questionsService.updateQuestion(questionID, updateQuestionDto);
@@ -60,23 +60,23 @@ export class QuestionsController {
   }
 
   // Hard delete a question (admin only)
-  @UseGuards(AccessConctrolGuard)
+  @UseGuards(AccessControlGuard)
   @Delete(':id')
   async remove(@Param('id') id: string) {
-    await this.questionsService.deleteQuestion(+id);
+    await this.questionsService.remove(+id);
     return { message: 'Question deleted successfully' };
   }
 
   // Soft delete a question (admin only)
-  @UseGuards(AccessConctrolGuard)
+  @UseGuards(AccessControlGuard)
   @Delete('/soft/:id')
   async removesoft(@Param('id') id: string) {
-    await this.questionsService.deleteQuestionv2(+id);
+    await this.questionsService.removewithsoft(+id);
     return { message: 'Question soft-deleted successfully' };
   }
 
   // Verify a single answer
-  @UseGuards(AccessConctrolGuard)
+  @UseGuards(AccessControlGuard)
   @Post(':id/verify')
   async verify(@Param('id') id: string, @Body('answer') answer: number) {
     const verificationResult = await this.questionsService.verifyAnswer(+id, answer);

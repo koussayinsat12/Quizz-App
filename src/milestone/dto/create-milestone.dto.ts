@@ -10,6 +10,10 @@ export class CreateMilestoneDto {
   roadmapId: string;
 
   @IsNotEmpty()
+  @IsNumber()
+  quizId: number;
+
+  @IsNotEmpty()
   @IsString()
   description: string;
 

@@ -1,6 +1,6 @@
 import { Repository, DeepPartial, FindOneOptions, DeleteResult } from 'typeorm';
 import { NotFoundException } from '@nestjs/common';
-import { find } from 'rxjs';
+
 
 export class CrudService<T> {
   constructor(private repository: Repository<T>) {}
@@ -23,7 +23,6 @@ export class CrudService<T> {
     }
 
    
-
   async update(id: any, updateDto: DeepPartial<T>): Promise<T> {
     const findOneOptions: FindOneOptions = {
       where: { id:  id },

@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, UseGuards } from '@nestjs/co
 import { ProgressService } from './progress.service';
 import { CreateProgressDto } from './dto/create-progress.dto';
 import { ConfirmUpdateProgressDto } from './dto/confirm-progress.dto';
-import { AuthGuard } from '../Gaurds/jwt-auth.guard';
+import { AuthGuard } from '../Guards/jwt-auth.guard';
 import { User } from '../decorators/user.decorator';
 
 @Controller('progress')
@@ -27,7 +27,7 @@ export class ProgressController {
 
   @Get()
   async findAll() {
-    return await this.progressService.findAll():
+    return await this.progressService.findAll();
   }
 
   @UseGuards(AuthGuard)

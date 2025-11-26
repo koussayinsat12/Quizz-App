@@ -14,6 +14,6 @@ import { JwtService } from '@nestjs/jwt';
 @Module({
   imports: [TypeOrmModule.forFeature([Milestone,TestQuiz,Roadmap])],
   controllers: [MilestoneController],
-  providers: [MilestoneService,JwtService],
+  providers: [MilestoneService],
 })
 export class MilestoneModule {}

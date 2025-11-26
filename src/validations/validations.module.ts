@@ -11,12 +11,11 @@ import {Roadmap} from "../roadmaps/entities/roadmap.entity";
 import {TestQuiz} from "../test-quiz/entities/test-quiz.entity";
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Question } from '../questions/entities/question.entity';
-import { JwtService } from '@nestjs/jwt';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Validation,User,Milestone, Roadmap,TestQuiz,Question])],
   controllers: [ValidationsController],
-  providers: [ValidationsService,JwtService],
+  providers: [ValidationsService],
   exports:[ValidationsService]
 })
 export class ValidationsModule {}
