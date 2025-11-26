@@ -1,86 +1,93 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, NotFoundException, HttpStatus, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { QuestionsService } from './questions.service';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
 import { QuizAnswersDto } from './dto/quiz-answers.dto';
-import { response } from 'express';
 import { AccessConctrolGuard } from '../Gaurds/roles.guard';
-import { User } from '../decorators/user.decorator';
 import { AuthGuard } from '../Gaurds/jwt-auth.guard';
-
+import { User } from '../decorators/user.decorator';
 
 @Controller('questions')
 export class QuestionsController {
   constructor(private readonly questionsService: QuestionsService) {}
 
-
+  // Seed questions
   @Get('testseed')
-  seedQuestions() {
-    this.questionsService.seedQuestions();
+  async seedQuestions() {
+    await this.questionsService.seedQuestions(); // <-- add await
     return { message: 'Questions seeded successfully' };
   }
 
+  // Get questions by quiz ID
   @Get('by-quiz/:quizID')
-  getByQuiz(@Param('quizID') quizID: number) {
-    return this.questionsService.getQuestionsByQuiz1(quizID);
+  async getByQuiz(@Param('quizID') quizID: number) {
+    const questions = await this.questionsService.getQuestionsByQuiz1(quizID);
+    return questions;
   }
 
+  // Get count of questions for a quiz
   @Get('count/:quizId')
-  getCountByQuizId(@Param('quizId') quizId: number) {
-   return this.questionsService.getCountByQuizId(quizId);
-
+  async getCountByQuizId(@Param('quizId') quizId: number) {
+    return await this.questionsService.getCountByQuizId(quizId);
   }
+
+  // Create a new question (admin only)
   @UseGuards(AccessConctrolGuard)
   @Post()
-  create(@Body() createQuestionDto: CreateQuestionDto) {
-    this.questionsService.create(createQuestionDto);
+  async create(@Body() createQuestionDto: CreateQuestionDto) {
+    await this.questionsService.create(createQuestionDto);
     return { message: 'Question created successfully' };
   }
 
+  // Get all questions
   @Get()
-  findAll() {
-    return this.questionsService.findAll();
+  async findAll() {
+    return await this.questionsService.findAll();
   }
 
+  // Get a single question by ID
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.questionsService.findOne(+id);
+  async findOne(@Param('id') id: string) {
+    return await this.questionsService.findOne(+id);
   }
 
+  // Update a question (admin only)
   @UseGuards(AccessConctrolGuard)
   @Patch(':id')
-  updateQuestion1(@Param('id') questionID: number, @Body() updateQuestionDto: UpdateQuestionDto) {
-    this.questionsService.updateQuestion(questionID, updateQuestionDto);
+  async updateQuestion(@Param('id') questionID: number, @Body() updateQuestionDto: UpdateQuestionDto) {
+    await this.questionsService.updateQuestion(questionID, updateQuestionDto);
     return { message: 'Question updated successfully' };
   }
 
+  // Hard delete a question (admin only)
   @UseGuards(AccessConctrolGuard)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    this.questionsService.deleteQuestion(+id);
+  async remove(@Param('id') id: string) {
+    await this.questionsService.deleteQuestion(+id);
     return { message: 'Question deleted successfully' };
   }
-  
+
+  // Soft delete a question (admin only)
   @UseGuards(AccessConctrolGuard)
   @Delete('/soft/:id')
-  removesoft(@Param('id') id: string) {
-    this.questionsService.deleteQuestionv2(+id);
-    return { message: 'Question deleted successfully' };
+  async removesoft(@Param('id') id: string) {
+    await this.questionsService.deleteQuestionv2(+id);
+    return { message: 'Question soft-deleted successfully' };
   }
 
-  
+  // Verify a single answer
   @UseGuards(AccessConctrolGuard)
   @Post(':id/verify')
-  verify(@Param('id') id: string, @Body('answer') answer: number) {
-    const verificationResult = this.questionsService.verifyAnswer(+id, answer);
+  async verify(@Param('id') id: string, @Body('answer') answer: number) {
+    const verificationResult = await this.questionsService.verifyAnswer(+id, answer);
     return { message: 'Verification successful', data: verificationResult };
   }
-@UseGuards(AuthGuard)
-  @Post('verify-quiz')
-  verifyQuiz(@Body() quizAnswersDto: QuizAnswersDto,@User() user) {
-    quizAnswersDto.userId=user.id
-    return this.questionsService.verifyQuizAnswers(quizAnswersDto);
 
+  // Verify a full quiz (authenticated user)
+  @UseGuards(AuthGuard)
+  @Post('verify-quiz')
+  async verifyQuiz(@Body() quizAnswersDto: QuizAnswersDto, @User() user) {
+    quizAnswersDto.userId = user.id;
+    return await this.questionsService.verifyQuizAnswers(quizAnswersDto);
   }
-  
 }
