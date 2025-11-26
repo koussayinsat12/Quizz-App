@@ -1,12 +1,12 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateMilestoneDto } from './dto/create-milestone.dto';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { Milestone } from './entities/milestone.entity';
 import { TestQuiz } from '../test-quiz/entities/test-quiz.entity';
-import { InjectRepository } from '@nestjs/typeorm';
 import { Roadmap } from '../roadmaps/entities/roadmap.entity';
+import { InjectRepository } from '@nestjs/typeorm';
 import { CrudService } from '../common/crud.service';
-import * as fs from 'fs';
+import * as fs from 'fs/promises';
 import * as path from 'path';
 
 @Injectable()
@@ -26,19 +26,18 @@ export class MilestoneService extends CrudService<Milestone> {
 
   // Create a new milestone
   async create(createMilestoneDto: CreateMilestoneDto): Promise<Milestone> {
-    const { id, roadmapId, description, orderNumber } = createMilestoneDto;
+    const { roadmapId, description, orderNumber, quizId } = createMilestoneDto;
 
     const roadmap = await this.roadmapRepository.findOne({ where: { id: roadmapId } });
     if (!roadmap) throw new NotFoundException(`Roadmap with ID "${roadmapId}" not found.`);
 
-    let testQuiz = await this.testQuizRepository.findOne({ where: { title: id } });
+    let testQuiz = await this.testQuizRepository.findOne({ where: { id: quizId } });
     if (!testQuiz) {
-      testQuiz = this.testQuizRepository.create({ title: id });
+      testQuiz = this.testQuizRepository.create({ id: quizId });
       await this.testQuizRepository.save(testQuiz);
     }
 
     const milestone = this.milestoneRepository.create({
-      id,
       roadmap,
       quiz: testQuiz,
       description,
@@ -59,56 +58,56 @@ export class MilestoneService extends CrudService<Milestone> {
   }
 
   // Hard delete milestone
-  async deleteMilestone(id: string): Promise<string> {
-    try {
-      await super.removewithsoft(id);
-      return `Milestone with ID "${id}" has been successfully deleted`;
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        return `Milestone with ID "${id}" not found`;
-      }
-      throw error;
-    }
+  async hardDelete(id: string): Promise<string> {
+    const milestone = await this.milestoneRepository.findOne({ where: { id } });
+    if (!milestone) return `Milestone with ID "${id}" not found`;
+
+    await this.milestoneRepository.remove(milestone);
+    return `Milestone with ID "${id}" has been permanently deleted`;
   }
 
   // Soft delete milestone
-  async deleteMilestonev2(id: string): Promise<string> {
-    try {
-      await super.removewithsoft(id);
-      return `Milestone with ID "${id}" has been successfully soft deleted`;
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        return `Milestone with ID "${id}" not found`;
-      }
-      throw error;
-    }
+  async softDelete(id: string): Promise<string> {
+    const result = await this.milestoneRepository.softDelete(id);
+    if (result.affected === 0) return `Milestone with ID "${id}" not found`;
+
+    return `Milestone with ID "${id}" has been successfully soft deleted`;
   }
 
   // Seed milestones from JSON file
   async seedMilestones(): Promise<void> {
     const filePath = path.join(__dirname, '../../data/milestone.json');
-    const rawData = fs.readFileSync(filePath, 'utf8');
-    const milestoneData = JSON.parse(rawData);
+    const rawData = await fs.readFile(filePath, 'utf8');
+    const milestoneData: CreateMilestoneDto[] = JSON.parse(rawData);
+
+    // Fetch all roadmaps and quizzes once to reduce DB calls
+    const roadmapIds = milestoneData.map(m => m.roadmapId);
+    const quizIds = milestoneData.map(m => m.quizId);
+
+    const roadmaps = await this.roadmapRepository.find({ where: { id: In(roadmapIds) } });
+    const quizzes = await this.testQuizRepository.find({ where: { id: In(quizIds) } });
+
+    const roadmapMap = new Map(roadmaps.map(r => [r.id, r]));
+    const quizMap = new Map(quizzes.map(q => [q.id, q]));
 
     for (const mData of milestoneData) {
-      const roadmap = await this.roadmapRepository.findOne({ where: { id: mData.roadmapId } });
+      const roadmap = roadmapMap.get(mData.roadmapId);
+      const quiz = quizMap.get(mData.quizId);
+
       if (!roadmap) {
-        console.warn(`Roadmap "${mData.roadmapId}" not found. Skipping milestone "${mData.title}".`);
+        console.warn(`Roadmap "${mData.roadmapId}" not found. Skipping milestone "${mData.description}".`);
         continue;
       }
-
-      let testQuiz = await this.testQuizRepository.findOne({ where: { title: mData.quizId } });
-      if (!testQuiz) {
-        console.warn(`TestQuiz "${mData.quizId}" not found. Skipping milestone "${mData.title}".`);
+      if (!quiz) {
+        console.warn(`TestQuiz "${mData.quizId}" not found. Skipping milestone "${mData.description}".`);
         continue;
       }
 
       const milestone = this.milestoneRepository.create({
-        id: mData.title,
         description: mData.description,
         orderNumber: mData.orderNumber,
         roadmap,
-        quiz: testQuiz,
+        quiz,
       });
 
       await this.milestoneRepository.save(milestone);
